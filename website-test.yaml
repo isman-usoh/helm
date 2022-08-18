@@ -1,0 +1,101 @@
+---
+# Source: website/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: demo-website
+  labels:
+    helm.sh/chart: website-0.1.0
+    app.kubernetes.io/name: website
+    app.kubernetes.io/instance: demo
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+---
+# Source: website/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-website
+  labels:
+    helm.sh/chart: website-0.1.0
+    app.kubernetes.io/name: website
+    app.kubernetes.io/instance: demo
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: website
+    app.kubernetes.io/instance: demo
+---
+# Source: website/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-website
+  labels:
+    helm.sh/chart: website-0.1.0
+    app.kubernetes.io/name: website
+    app.kubernetes.io/instance: demo
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: website
+      app.kubernetes.io/instance: demo
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: sss
+        vault.hashicorp.com/agent-inject-secret-dotenv: sss
+        vault.hashicorp.com/agent-inject-template-dotenv: |
+          {{- with secret "sss" -}}
+          {{- range $${q}k, $${q}v := .Data.data -}}
+          {{ $${q}k }}={{ $${q}v }}
+          {{ end -}}
+          {{- end -}}
+      labels:
+        app.kubernetes.io/name: website
+        app.kubernetes.io/instance: demo
+    spec:
+      serviceAccountName: demo-website
+      securityContext:
+        {}
+      containers:
+        - name: website
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+                path: /healthz
+                port: http
+            initialDelaySeconds: 10
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 1
+            successThreshold: 1
+          readinessProbe:
+            httpGet:
+                path: /healthz
+                port: http
+            initialDelaySeconds: 10
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 5
+            successThreshold: 2
+          resources:
+            {}
