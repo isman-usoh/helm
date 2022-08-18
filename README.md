@@ -1,9 +1,9 @@
-# BBT Helm Charts
+# Isman Helm Charts
 
-BBT Helm is a collection of **community maintained** charts for [https://bbtcorp.gitlab.io](https://bbtcorp.gitlab.io) projects. The charts can be added using following command:
+Isman Helm is a collection of **community maintained** charts for [https://github.com/isman-usoh](https://github.com/isman-usoh/helm-repo) projects. The charts can be added using following command:
 
 ```
-helm repo add argo https://bbtcorp.gitlab.io/helm
+helm repo add argo https://isman-usoh.github.io/helm
 ```
 
 ## Contributing
