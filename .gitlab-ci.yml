@@ -1,11 +1,28 @@
-image: busybox
+stages:
+  - package-publish
 
-pages:
-  stage: deploy
+helm-package:
+  stage: package-publish
+  image:
+    name: alpine/helm:3.5.3
+    entrypoint: [""]
+  tags: 
+    - minikube    
+  variables:
+    CHART: ./charts/website
+  before_script:
+    - apk add git
+    - helm plugin install --version=v0.9.0 https://github.com/chartmuseum/helm-push.git
+    - >
+      helm repo add ${CHART}
+      --username ${CI_REGISTRY_USER}
+      --password ${CI_REGISTRY_PASSWORD}
+      ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/helm/stable
   script:
-    - echo "The site will be deployed to $CI_PAGES_URL"
-  artifacts:
-    paths:
-      - public
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - helm package ${CHART}
+    - helm push ${CHART}*.tgz ${CHART}
+  only:
+    refs:
+      - main
+    changes:
+      - charts/website/**/*
